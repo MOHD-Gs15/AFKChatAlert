@@ -1,0 +1,80 @@
+plugins {
+    id 'java'
+    id 'net.fabricmc.fabric-loom' version "${loom_version}"
+}
+
+// ----------------------------------------------------------
+// AFK Chat Alert — 100% client-side Fabric mod
+// Minecraft 26.1.x | Fabric Loader 0.19.4+ | Java 25
+//
+// MINECRAFT 26.1.x UNOBFUSCATED BUILD (official Mojang names):
+//   - no mappings dependency (Yarn is retired since 26.1)
+//   - standard Gradle configurations (implementation / compileOnly)
+//   - plain `jar` output (no remapJar step)
+//
+// modmenu + cloth-config are compileOnly: they are user-installed
+// companion mods, deliberately NOT bundled into this jar.
+// ----------------------------------------------------------
+
+import org.gradle.jvm.toolchain.JavaLanguageVersion
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(25)
+        vendor = org.gradle.jvm.toolchain.JvmVendorSpec.ADOPTIUM
+    }
+    sourceCompatibility = JavaVersion.VERSION_25
+    targetCompatibility = JavaVersion.VERSION_25
+}
+
+version = project.mod_version
+group = project.maven_group
+
+repositories {
+    mavenCentral()
+    maven {
+        name = 'Modrinth'
+        url = 'https://api.modrinth.com/maven'
+    }
+}
+
+dependencies {
+    // Minecraft (unobfuscated since 26.1 — no mappings needed)
+    minecraft "com.mojang:minecraft:${project.minecraft_version}"
+
+    // Fabric Loader & API
+    implementation "net.fabricmc:fabric-loader:${project.loader_version}"
+    implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+
+    // Config GUI companion mods (user-installed at runtime)
+    compileOnly "maven.modrinth:modmenu:${project.modmenu_version}"
+    compileOnly "maven.modrinth:cloth-config:${project.cloth_config_version}"
+
+    // Provided at runtime by the game; only needed for compilation
+    compileOnly "com.google.code.gson:gson:2.14.0"
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = "UTF-8"
+    options.release = 25
+}
+
+jar {
+    from("LICENSE") {
+        rename { "${it}_${project.archives_base_name}" }
+    }
+    manifest {
+        attributes([
+            "Implementation-Title": project.archives_base_name,
+            "Implementation-Version": project.version
+        ])
+    }
+}
+
+processResources {
+    inputs.property "version", project.version
+
+    filesMatching("fabric.mod.json") {
+        expand "version": project.version
+    }
+}

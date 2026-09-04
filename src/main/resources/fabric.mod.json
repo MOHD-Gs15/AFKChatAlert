@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "id": "afk-chat-alert",
+  "version": "${version}",
+  "name": "AFK Chat Alert",
+  "description": "Never miss an important chat mention again! Plays a distinct audio alert whenever your custom keywords or name are mentioned while you are AFK. (100% Client-Side)",
+  "authors": [
+    "MOHD_Gs"
+  ],
+  "contact": {
+    "homepage": "https://modrinth.com/mod/afk-chat-alert",
+    "sources": "https://github.com/MOHD-Gs15/AFKChatAlert",
+    "issues": "https://github.com/MOHD-Gs15/AFKChatAlert/issues"
+  },
+  "license": "MIT",
+  "icon": "assets/afk-chat-alert/icon.png",
+  "environment": "client",
+  "entrypoints": {
+    "client": [
+      "com.afkchatalert.AFKChatAlert"
+    ],
+    "modmenu": [
+      "com.afkchatalert.gui.ModMenuIntegration"
+    ]
+  },
+  "depends": {
+    "fabricloader": ">=0.19.4",
+    "fabric-api": "*",
+    "minecraft": ">=26.1.0 <26.2.0",
+    "java": ">=25",
+    "cloth-config": ">=26.1.0",
+    "modmenu": ">=18.0.0"
+  }
+}
