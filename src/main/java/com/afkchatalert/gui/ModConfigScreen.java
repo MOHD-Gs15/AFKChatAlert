@@ -3,6 +3,7 @@ package com.afkchatalert.gui;
 import com.afkchatalert.config.ModConfig;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import me.shedaniel.clothconfig2.api.ConfigBuilder;
 import me.shedaniel.clothconfig2.api.ConfigCategory;
 import me.shedaniel.clothconfig2.api.ConfigEntryBuilder;
@@ -68,6 +69,18 @@ public final class ModConfigScreen {
                 .setSaveConsumer(ModConfig::setSmartAfkTimeoutMinutes)
                 .build());
 
+        // Window-focus AFK is a Windows 10/11 feature; on other platforms it
+        // is silently inactive, so the toggle is hidden rather than shown
+        // broken (ModConfig#isFocusLossAfk gates the runtime behavior).
+        if (ModConfig.isFocusAfkSupported()) {
+            general.addEntry(entryBuilder
+                    .startBooleanToggle(Component.translatable("config.afk-chat-alert.option.focusLossAfk"), ModConfig.isFocusLossAfkSetting())
+                    .setDefaultValue(true)
+                    .setTooltip(Component.translatable("config.afk-chat-alert.option.focusLossAfk.tooltip"))
+                    .setSaveConsumer(ModConfig::setFocusLossAfk)
+                    .build());
+        }
+
         ConfigCategory sound = builder.getOrCreateCategory(
                 Component.translatable("config.afk-chat-alert.category.sound"));
 
@@ -76,7 +89,8 @@ public final class ModConfigScreen {
                 .setDefaultValue(ModConfig.AlertSound.EXPLOSION)
                 .setEnumNameProvider(anEnum -> {
                     if (anEnum instanceof ModConfig.AlertSound alertSound) {
-                        return Component.literal(alertSound.getDisplayName());
+                        return Component.translatable(
+                                "config.afk-chat-alert.sound." + alertSound.name().toLowerCase(Locale.ROOT));
                     }
                     return Component.literal(anEnum.name());
                 })

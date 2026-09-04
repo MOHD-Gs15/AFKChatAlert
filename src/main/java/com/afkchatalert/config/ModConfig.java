@@ -10,6 +10,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import net.fabricmc.loader.api.FabricLoader;
 
 /**
@@ -37,6 +38,14 @@ public class ModConfig {
     private static int smartAfkTimeoutMinutes = 2;
     private static long lastActivityTime = System.currentTimeMillis();
     private static boolean isAfkMode = false;
+
+    /**
+     * Window-focus AFK detection ("Unfocused = AFK"). Default ON; only ever
+     * effective on Windows 10/11, where the GLFW focus signal is reliable for
+     * our purposes. Stored as the *desired* setting so the file stays portable
+     * across platforms — the platform gate lives in {@link #isFocusLossAfk()}.
+     */
+    private static boolean focusLossAfk = true;
 
     private static AlertSound alertSound = AlertSound.EXPLOSION;
     private static int alertVolume = 100;
@@ -134,6 +143,42 @@ public class ModConfig {
         return isAfkMode;
     }
 
+    /**
+     * Latches AFK mode immediately when the game window loses focus. Focus
+     * is checked after {@link #updateActivity()} in the tick loop so it is
+     * the dominant signal: even a falling (moving) player is AFK while the
+     * window is unfocused.
+     */
+    public static void enterAfkByFocusLoss() {
+        isAfkMode = true;
+    }
+
+    /**
+     * Whether window-focus AFK detection is supported on this platform.
+     * Intentionally Windows-only: Linux windowing (X11/Wayland/mir, plus a
+     * zoo of compositors) reports GLFW focus inconsistently, so the feature
+     * ships disabled there rather than misbehaving. The mod itself works
+     * normally everywhere.
+     */
+    public static boolean isFocusAfkSupported() {
+        return System.getProperty("os.name", "").toLowerCase(Locale.ROOT).contains("win");
+    }
+
+    /** Raw config value (user intent), used by the config screen. */
+    public static boolean isFocusLossAfkSetting() {
+        return focusLossAfk;
+    }
+
+    /** Effective value: the setting AND platform support. */
+    public static boolean isFocusLossAfk() {
+        return focusLossAfk && isFocusAfkSupported();
+    }
+
+    public static void setFocusLossAfk(boolean value) {
+        focusLossAfk = value;
+        save();
+    }
+
     public static AlertSound getAlertSound() {
         return alertSound;
     }
@@ -164,6 +209,7 @@ public class ModConfig {
         data.cooldownSeconds = cooldownSeconds;
         data.smartAfkEnabled = smartAfkEnabled;
         data.smartAfkTimeoutMinutes = smartAfkTimeoutMinutes;
+        data.focusLossAfk = focusLossAfk;
         data.alertSound = alertSound.name();
         data.alertVolume = alertVolume;
         try {
@@ -201,6 +247,9 @@ public class ModConfig {
                 }
                 if (data.smartAfkTimeoutMinutes != null) {
                     smartAfkTimeoutMinutes = data.smartAfkTimeoutMinutes;
+                }
+                if (data.focusLossAfk != null) {
+                    focusLossAfk = data.focusLossAfk;
                 }
                 if (data.alertSound != null) {
                     try {
@@ -251,6 +300,7 @@ public class ModConfig {
         Integer cooldownSeconds;
         Boolean smartAfkEnabled;
         Integer smartAfkTimeoutMinutes;
+        Boolean focusLossAfk;
         String alertSound;
         Integer alertVolume;
     }

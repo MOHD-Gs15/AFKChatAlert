@@ -35,6 +35,9 @@ public class AFKChatAlert implements ClientModInitializer {
     private static KeyMapping toggleKeyMapping;
     private static String cachedUsername;
 
+    /** Last known window-focus state (only meaningful while focus AFK is on). */
+    private boolean lastWindowActive = true;
+
     @Override
     public void onInitializeClient() {
         ModConfig.load();
@@ -58,12 +61,40 @@ public class AFKChatAlert implements ClientModInitializer {
 
     private void onClientTick(Minecraft minecraft) {
         if (minecraft.level == null || minecraft.player == null) {
+            // Not in a world: keep the baseline focused so the first focus
+            // loss after joining a world is detected correctly.
+            lastWindowActive = true;
             return;
         }
         trackPlayerActivity(minecraft);
+
+        // Window-focus AFK (Windows only). Checked AFTER trackPlayerActivity
+        // so focus is the dominant signal: an unfocused window is AFK even
+        // if the player entity is still moving (e.g. falling).
+        if (ModConfig.isFocusLossAfk()) {
+            boolean windowActive = isWindowActive(minecraft);
+            if (!windowActive) {
+                ModConfig.enterAfkByFocusLoss();
+            } else if (!lastWindowActive) {
+                // Focus just came back: treat it as fresh activity so the
+                // inactivity timeout must elapse again before going AFK.
+                ModConfig.updateActivity();
+            }
+            lastWindowActive = windowActive;
+        } else {
+            lastWindowActive = true;
+        }
+
         if (toggleKeyMapping != null && toggleKeyMapping.consumeClick()) {
             toggleMod(minecraft);
         }
+    }
+
+    /** Focused and not minimized — GLFW updates both flags via callbacks. */
+    private boolean isWindowActive(Minecraft minecraft) {
+        return minecraft.getWindow() != null
+                && minecraft.getWindow().isFocused()
+                && !minecraft.getWindow().isIconified();
     }
 
     /**
@@ -151,22 +182,27 @@ public class AFKChatAlert implements ClientModInitializer {
             }
             float volume = ModConfig.getAlertVolumeFloat();
             ModConfig.AlertSound selectedSound = ModConfig.getAlertSound();
+            // SoundSource.UI on purpose: the vanilla sound engine mutes all
+            // other categories when the game auto-pauses on lost focus
+            // (SoundManager.pauseAllExcept(MUSIC, UI)), so only UI-source
+            // alerts remain audible while the window is unfocused — exactly
+            // when an AFK alert needs to be heard.
             switch (selectedSound) {
                 case EXPLOSION:
                     minecraft.level.playSound(minecraft.player, minecraft.player.getX(), minecraft.player.getY(),
-                            minecraft.player.getZ(), SoundEvents.GENERIC_EXPLODE, SoundSource.MASTER, volume, 1.0f);
+                            minecraft.player.getZ(), SoundEvents.GENERIC_EXPLODE, SoundSource.UI, volume, 1.0f);
                     break;
                 case EXPERIENCE_ORB:
                     minecraft.level.playSound(minecraft.player, minecraft.player.getX(), minecraft.player.getY(),
-                            minecraft.player.getZ(), SoundEvents.EXPERIENCE_ORB_PICKUP, SoundSource.MASTER, volume, 1.0f);
+                            minecraft.player.getZ(), SoundEvents.EXPERIENCE_ORB_PICKUP, SoundSource.UI, volume, 1.0f);
                     break;
                 case VILLAGE_BELL:
                     minecraft.level.playSound(minecraft.player, minecraft.player.getX(), minecraft.player.getY(),
-                            minecraft.player.getZ(), SoundEvents.BELL_BLOCK, SoundSource.MASTER, volume, 1.0f);
+                            minecraft.player.getZ(), SoundEvents.BELL_BLOCK, SoundSource.UI, volume, 1.0f);
                     break;
                 case NOTE_BLOCK_BELL:
                     minecraft.level.playSound(minecraft.player, minecraft.player.getX(), minecraft.player.getY(),
-                            minecraft.player.getZ(), SoundEvents.NOTE_BLOCK_BELL, SoundSource.MASTER, volume, 1.0f);
+                            minecraft.player.getZ(), SoundEvents.NOTE_BLOCK_BELL, SoundSource.UI, volume, 1.0f);
                     break;
             }
         });
