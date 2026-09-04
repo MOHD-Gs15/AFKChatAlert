@@ -1,0 +1,19 @@
+{
+  "key.afk-chat-alert.toggle": "Toggle AFK Chat Alert",
+  "message.afk-chat-alert.enabled": "AFK Chat Alert enabled",
+  "message.afk-chat-alert.disabled": "AFK Chat Alert disabled",
+  "config.afk-chat-alert.title": "AFK Chat Alert Settings",
+  "config.afk-chat-alert.category.general": "General",
+  "config.afk-chat-alert.category.sound": "Alert Sound",
+  "config.afk-chat-alert.option.enabled": "Mod Enabled",
+  "config.afk-chat-alert.option.autoUsername": "Auto-detect Username",
+  "config.afk-chat-alert.option.keywords": "Keywords",
+  "config.afk-chat-alert.option.cooldown": "Alert Cooldown",
+  "config.afk-chat-alert.cooldown.disabled": "Disabled",
+  "config.afk-chat-alert.cooldown.seconds": "%s seconds",
+  "config.afk-chat-alert.option.smartAfk": "Smart AFK Detection",
+  "config.afk-chat-alert.option.smartAfkTimeout": "AFK Timeout",
+  "config.afk-chat-alert.timeout.minutes": "%s minutes",
+  "config.afk-chat-alert.option.alertSound": "Alert Sound",
+  "config.afk-chat-alert.option.alertVolume": "Alert Volume"
+}
